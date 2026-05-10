@@ -9,6 +9,8 @@ from http import server
 from picamera2 import Picamera2
 from libcamera import Transform
 from ultralytics import YOLO
+import RPi.GPIO as GPIO
+import smbus
 
 FRAME_SIZE = (640, 360)
 YOLO_IMGSZ = 320
@@ -16,16 +18,112 @@ DETECT_EVERY_N_FRAMES = 3
 CONF_THRESHOLD = 0.35
 JPEG_QUALITY = 70
 
+# =========================================================
+# GPIO SETUP FOR ULTRASONIC SENSORS
+# =========================================================
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
+
+TRIG = 16
+ECHO_FRONT = 26
+ECHO_LEFT = 14
+ECHO_RIGHT = 8
+
+GPIO.setup(TRIG, GPIO.OUT)
+GPIO.setup(ECHO_FRONT, GPIO.IN)
+GPIO.setup(ECHO_LEFT, GPIO.IN)
+GPIO.setup(ECHO_RIGHT, GPIO.IN)
+GPIO.output(TRIG, False)
+
+# =========================================================
+# MPU6050 I2C SETUP
+# =========================================================
+MPU6050_ADDR = 0x68
+PWR_MGMT_1 = 0x6B
+GYRO_XOUT_H = 0x43
+GYRO_YOUT_H = 0x45
+GYRO_ZOUT_H = 0x47
+
+try:
+    i2c_bus = smbus.SMBus(1)
+    i2c_bus.write_byte_data(MPU6050_ADDR, PWR_MGMT_1, 0)
+    mpu6050_available = True
+except Exception as e:
+    logging.warning(f"MPU6050 not available: {e}")
+    mpu6050_available = False
+
+# Current sensor readings
+sensor_readings = {"front": -1, "left": -1, "right": -1, "gx": 0, "gy": 0, "gz": 0}
+
 PAGE = """\
 <html>
 <head><title>Robot YOLO POV</title></head>
 <body style="background:black; color:white; text-align:center; font-family:sans-serif;">
 <h1>Mecanum Robot - YOLO Live Feed</h1>
 <img src="stream.mjpg" width="640" height="480" style="border:3px solid #33cc33;" />
-<p>YOLO object detection active</p>
+<p>YOLO object detection + Ultrasonic Sensors active</p>
 </body>
 </html>
 """
+
+# =========================================================
+# DISTANCE READING FUNCTION
+# =========================================================
+
+def read_distance(echo_pin):
+    """Read distance from ultrasonic sensor"""
+    try:
+        GPIO.output(TRIG, True)
+        time.sleep(0.00001)
+        GPIO.output(TRIG, False)
+
+        pulse_start = time.time()
+        timeout = pulse_start
+
+        while GPIO.input(echo_pin) == 0:
+            pulse_start = time.time()
+            if pulse_start - timeout > 0.03:
+                return -1
+
+        pulse_end = time.time()
+
+        while GPIO.input(echo_pin) == 1:
+            pulse_end = time.time()
+            if pulse_end - pulse_start > 0.03:
+                return -1
+
+        pulse_duration = pulse_end - pulse_start
+        distance = pulse_duration * 17150
+        return round(distance, 1)
+    except Exception as e:
+        logging.warning(f"Sensor read error: {e}")
+        return -1
+
+def read_word(reg):
+    """Read 16-bit word from MPU6050"""
+    try:
+        high = i2c_bus.read_byte_data(MPU6050_ADDR, reg)
+        low = i2c_bus.read_byte_data(MPU6050_ADDR, reg + 1)
+        value = (high << 8) + low
+        if value >= 0x8000:
+            value = -((65535 - value) + 1)
+        return value
+    except Exception as e:
+        logging.warning(f"MPU6050 read error: {e}")
+        return 0
+
+def get_gyro():
+    """Read gyroscope values from MPU6050 (degrees/sec)"""
+    if not mpu6050_available:
+        return 0, 0, 0
+    try:
+        gx = read_word(GYRO_XOUT_H) / 131.0
+        gy = read_word(GYRO_YOUT_H) / 131.0
+        gz = read_word(GYRO_ZOUT_H) / 131.0
+        return round(gx, 2), round(gy, 2), round(gz, 2)
+    except Exception as e:
+        logging.warning(f"Gyro read error: {e}")
+        return 0, 0, 0
 
 class StreamingOutput:
     def __init__(self):
@@ -83,7 +181,8 @@ class StreamingServer(socketserver.ThreadingMixIn, server.HTTPServer):
     daemon_threads = True
 
 
-def draw_cached_detections(frame, detections):
+def draw_cached_detections(frame, detections, sensor_data=None):
+    # Draw YOLO detections
     for det in detections:
         x1, y1, x2, y2, conf, label = det
         cv2.rectangle(frame, (x1, y1), (x2, y2), (51, 204, 51), 2)
@@ -109,6 +208,74 @@ def draw_cached_detections(frame, detections):
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
             (0, 0, 0),
+            1,
+            cv2.LINE_AA,
+        )
+
+    # Draw sensor readings at bottom of frame
+    if sensor_data:
+        front = sensor_data.get("front", -1)
+        left = sensor_data.get("left", -1)
+        right = sensor_data.get("right", -1)
+        gx = sensor_data.get("gx", 0)
+        gy = sensor_data.get("gy", 0)
+        gz = sensor_data.get("gz", 0)
+
+        sensor_text = f"Front: {front:.1f}cm | Left: {left:.1f}cm | Right: {right:.1f}cm"
+        gyro_text = f"Gyro - X: {gx:6.1f}°/s  Y: {gy:6.1f}°/s  Z: {gz:6.1f}°/s"
+
+        # Semi-transparent background for sensor info (ultrasonic)
+        (text_w, text_h), baseline = cv2.getTextSize(
+            sensor_text,
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            2,
+        )
+
+        y_pos = frame.shape[0] - 10
+        cv2.rectangle(
+            frame,
+            (5, y_pos - text_h - baseline - 8),
+            (15 + text_w, y_pos + 2),
+            (0, 0, 255),
+            -1,
+        )
+
+        cv2.putText(
+            frame,
+            sensor_text,
+            (10, y_pos - baseline - 2),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
+
+        # Draw gyroscope info above sensor info
+        (text_w_gyro, text_h_gyro), baseline_gyro = cv2.getTextSize(
+            gyro_text,
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            1,
+        )
+
+        y_pos_gyro = y_pos - text_h - baseline - 15
+        cv2.rectangle(
+            frame,
+            (5, y_pos_gyro - text_h_gyro - baseline_gyro - 8),
+            (15 + text_w_gyro, y_pos_gyro + 2),
+            (255, 100, 0),
+            -1,
+        )
+
+        cv2.putText(
+            frame,
+            gyro_text,
+            (10, y_pos_gyro - baseline_gyro - 2),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (255, 255, 255),
             1,
             cv2.LINE_AA,
         )
@@ -166,7 +333,14 @@ def detection_loop():
             )
             last_detections = extract_detections(results[0], class_names)
 
-        draw_cached_detections(frame, last_detections)
+        # Read sensor data every 5 frames
+        if frame_count % 5 == 0:
+            sensor_readings["front"] = read_distance(ECHO_FRONT)
+            sensor_readings["left"] = read_distance(ECHO_LEFT)
+            sensor_readings["right"] = read_distance(ECHO_RIGHT)
+            sensor_readings["gx"], sensor_readings["gy"], sensor_readings["gz"] = get_gyro()
+
+        draw_cached_detections(frame, last_detections, sensor_readings)
 
         ok, jpeg = cv2.imencode(".jpg", frame, encode_params)
         if ok:

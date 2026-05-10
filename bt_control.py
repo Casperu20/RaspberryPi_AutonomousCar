@@ -19,8 +19,8 @@ GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 
 # Standby (enable) pins for the two motor drivers
-STBY1_PIN = 20  # TB6612FNG Driver 1 STBY
-STBY2_PIN = 21  # TB6612FNG Driver 2 STBY
+# Standby (enable) pin shared by both motor drivers
+STBY_PIN = 20  # TB6612FNG common STBY
 
 # Motor pin assignments: (forward_pin, reverse_pin, pwm_pin)
 FL_PINS = (27, 17, 18)  # Front Left
@@ -52,7 +52,7 @@ SPEED_ROTATE = 60            # Speed for rotation
 # GPIO SETUP
 # ============================================================================
 
-all_pins = [STBY1_PIN, STBY2_PIN] + list(FL_PINS) + list(FR_PINS) + list(RL_PINS) + list(RR_PINS)
+all_pins = [STBY_PIN] + list(FL_PINS) + list(FR_PINS) + list(RL_PINS) + list(RR_PINS)
 
 # Set initial state to LOW to prevent glitches during power-on
 for pin in all_pins:
@@ -71,8 +71,7 @@ pwm_rl.start(0)
 pwm_rr.start(0)
 
 # Enable the motor drivers
-GPIO.output(STBY1_PIN, GPIO.HIGH)
-GPIO.output(STBY2_PIN, GPIO.HIGH)
+GPIO.output(STBY_PIN, GPIO.HIGH)
 
 print("GPIO initialized and motor drivers enabled.")
 
@@ -175,7 +174,7 @@ def stop():
 
 server_sock = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
 client_sock = None
-RFCOMM_CHANNEL = 3
+RFCOMM_CHANNEL = 1
 
 try:
     # Allow reusing the address
