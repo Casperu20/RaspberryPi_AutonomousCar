@@ -1,0 +1,25 @@
+| Hardware              | Meaning                                                  |
+| --------------------- | -------------------------------------------------------- |
+| 2× TB6612FNG drivers  | Each driver controls 2 DC motors                         |
+| 4× TT motors          | FL, FR, RL, RR                                           |
+| 4× mecanum wheels     | Allows forward/backward, strafe left/right, and rotation |
+| 3× ultrasonic sensors | Front, left, right obstacle detection                    |
+| 1× MPU6050            | Accel + gyro over I2C (Gyro X/Y/Z + accel X/Y only)      |
+| 1x Camera             | Vision / image processing / remote view                  |
+
+
+- Motors / TB6612FNG drivers
+- 3 ultrasonic sensors (HC-SR04)
+- MPU6050 accelerometer + gyroscope over I2C
+
+| Component         | GPIO pins                  |
+| ----------------- | -------------------------- |
+| Motor STBY        | GPIO20                     |
+| Front Left motor  | GPIO27, GPIO17, PWM GPIO18 |
+| Front Right motor | GPIO22, GPIO23, PWM GPIO13 |
+| Rear Left motor   | GPIO25, GPIO24, PWM GPIO12 |
+| Rear Right motor  | GPIO6, GPIO5, PWM GPIO19   |
+| Ultrasonic front  | TRIG GPIO16, ECHO GPIO26   |
+| Ultrasonic left   | TRIG GPIO4, ECHO GPIO14    |
+| Ultrasonic right  | TRIG GPIO15, ECHO GPIO8    |
+| MPU6050           | I2C: GPIO2 SDA, GPIO3 SCL  |
