@@ -1,0 +1,23 @@
+How to run it
+
+Start your robot mapper:
+
+python3 autonomous_grid_mapper.py
+
+In another terminal, watch the normal map:
+
+python3 visualize_grid_map.py --watch --margin 5
+
+In another terminal, watch the temperature heatmap:
+
+python3 visualize_heatmap.py --field temperature --watch
+
+And humidity:
+
+python3 visualize_heatmap.py --field humidity --watch
+
+Open the images:
+
+xdg-open robot_grid_map.png
+xdg-open temperature_heatmap.png
+xdg-open humidity_heatmap.png
