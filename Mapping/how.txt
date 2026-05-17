@@ -1,0 +1,29 @@
+too see live:
+cd ~/Desktop/Mapping
+watch -n 0.5 'cat robot_grid_map.txt'
+
+or too see the png live:
+
+Run cropped view:
+
+python3 visualize_grid_map.py
+
+Run live cropped updates:
+
+python3 visualize_grid_map.py --watch
+
+Use a bigger crop margin:
+
+python3 visualize_grid_map.py --margin 6
+
+Show the full 61 x 61 map only when needed:
+
+python3 visualize_grid_map.py --full
+
+Then open the PNG:
+
+xdg-open robot_grid_map.png
+
+For your case, the best live workflow is:
+
+python3 visualize_grid_map.py --watch --margin 5

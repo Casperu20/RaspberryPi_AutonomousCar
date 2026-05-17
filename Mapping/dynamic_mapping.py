@@ -1,30 +1,11 @@
 #!/usr/bin/env python3
 """
-Autonomous Grid Mapper
-----------------------
+Dynamic Grid Mapper
+-------------------
 
-Converts the ultrasonic + MPU6050 obstacle-avoidance robot into a simple
-grid-mapping robot:
+Based on autonomous_grid_mapper.py, but with automatic map expansion.
 
-- Tracks (x, y, heading) on a discrete grid.
-- Moves exactly one cell at a time using timed forward motion.
-- Uses MPU6050 gyro-assisted 90-degree turns.
-- Uses ultrasonic sensors to mark neighboring cells as free / obstacle.
-- Saves the map to JSON + ASCII text files.
-- Prints an ASCII map after each step.
-- Provides a placeholder per-cell environment sampler
-  (future DHT / air-quality hookup).
-
-Hardware:
-- Raspberry Pi 4B
-- 2x TB6612FNG motor drivers
-- 4x TT motors with mecanum wheels
-- 3x HC-SR04 ultrasonic sensors
-- MPU6050 over I2C (smbus, address 0x68, bus 1)
-
-No camera. No DHT / air-quality sensor yet.
-
-robot_grid_map:
+Map symbols (ASCII):
 ? = unknown
 . = free
 * = visited
@@ -96,12 +77,12 @@ GYRO_ZOUT_H = 0x47
 # SPEED / DRIVE SETTINGS
 # ============================================================================
 
-SPEED_FORWARD = 70
-SPEED_BACKWARD = 70
-SPEED_ROTATE = 70
+SPEED_FORWARD = 40
+SPEED_BACKWARD = 45
+SPEED_ROTATE = 55
 
-FRONT_SAFE_DISTANCE = 30
-FRONT_DANGER_DISTANCE = 18
+FRONT_SAFE_DISTANCE = 35
+FRONT_DANGER_DISTANCE = 20
 SIDE_CLEAR_DISTANCE = 25
 
 BACKUP_TIME = 0.35
@@ -118,20 +99,20 @@ INVALID_DISTANCE = -1
 # GRID MAPPING SETTINGS
 # ============================================================================
 
-MAP_WIDTH = 61
-MAP_HEIGHT = 61
+INITIAL_MAP_WIDTH = 21
+INITIAL_MAP_HEIGHT = 21
 CELL_SIZE_CM = 35
 
-CELL_DRIVE_TIME = 0.75
+CELL_DRIVE_TIME = 0.65
 CELL_DRIVE_SPEED = 40
 
 CELL_FREE_DISTANCE = 35
 CELL_BLOCKED_DISTANCE = 25
 
-MAX_GRID_STEPS = 20 # scan -> update map -> choose cell -> turn -> move one cell -> save map
+MAX_GRID_STEPS = 20
 
-MAP_JSON_FILE = "robot_grid_map.json"
-MAP_ASCII_FILE = "robot_grid_map.txt"
+MAP_JSON_FILE = "dynamic_robot_grid_map.json"
+MAP_ASCII_FILE = "dynamic_robot_grid_map.txt"
 
 # Cell states
 UNKNOWN = "unknown"
@@ -183,12 +164,21 @@ yaw_last_time = None
 
 cleaned_up = False
 
-# Grid state (initialized in main)
+# Grid state (dynamic dimensions)
 grid = []
-robot_x = MAP_WIDTH // 2
-robot_y = MAP_HEIGHT // 2
+robot_x = INITIAL_MAP_WIDTH // 2
+robot_y = INITIAL_MAP_HEIGHT // 2
 robot_heading = NORTH
 position_stack = []
+
+# Expansion counters
+expansions_left = 0
+expansions_right = 0
+expansions_top = 0
+expansions_bottom = 0
+
+# Step counter for JSON output
+current_step = 0
 
 # ============================================================================
 # GPIO SETUP
@@ -350,7 +340,7 @@ def update_yaw():
 
 
 # ============================================================================
-# MOTOR CONTROL
+# MOTOR CONTROL (UNCHANGED PATTERNS)
 # ============================================================================
 
 def clamp_speed(speed):
@@ -429,8 +419,7 @@ def stop():
 
 
 def rotate_left_angle(target_angle=TURN_ANGLE, speed=SPEED_ROTATE):
-    """Rotate left until abs(yaw) reaches target angle or timeout.
-    Returns True on success, False on timeout."""
+    """Rotate left until abs(yaw) reaches target angle or timeout."""
     print(f"TURN: Left target={target_angle:.1f} deg")
 
     reset_yaw()
@@ -472,8 +461,7 @@ def rotate_left_angle(target_angle=TURN_ANGLE, speed=SPEED_ROTATE):
 
 
 def rotate_right_angle(target_angle=TURN_ANGLE, speed=SPEED_ROTATE):
-    """Rotate right until abs(yaw) reaches target angle or timeout.
-    Returns True on success, False on timeout."""
+    """Rotate right until abs(yaw) reaches target angle or timeout."""
     print(f"TURN: Right target={target_angle:.1f} deg")
 
     reset_yaw()
@@ -582,7 +570,7 @@ def read_all_distances():
 
 
 # ============================================================================
-# GRID MAP HELPERS
+# DYNAMIC GRID HELPERS
 # ============================================================================
 
 def create_cell():
@@ -596,25 +584,154 @@ def create_cell():
     }
 
 
+def map_width():
+    return len(grid[0]) if grid else 0
+
+
+def map_height():
+    return len(grid)
+
+
 def init_grid():
     global grid
-    grid = [[create_cell() for _ in range(MAP_WIDTH)] for _ in range(MAP_HEIGHT)]
+    grid = [
+        [create_cell() for _ in range(INITIAL_MAP_WIDTH)]
+        for _ in range(INITIAL_MAP_HEIGHT)
+    ]
 
 
 def in_bounds(x, y):
-    return 0 <= x < MAP_WIDTH and 0 <= y < MAP_HEIGHT
+    return 0 <= x < map_width() and 0 <= y < map_height()
+
+
+def shift_position_stack(dx=0, dy=0):
+    global position_stack
+    if dx == 0 and dy == 0:
+        return
+    position_stack = [(x + dx, y + dy) for x, y in position_stack]
+
+
+def print_map_size_and_robot():
+    print(
+        f"Map size: {map_width()}x{map_height()} | "
+        f"Robot: ({robot_x}, {robot_y})"
+    )
+
+
+def expand_map_left(columns=1):
+    global robot_x, expansions_left
+    if columns <= 0:
+        return
+
+    for i in range(map_height()):
+        grid[i] = [create_cell() for _ in range(columns)] + grid[i]
+
+    robot_x += columns
+    shift_position_stack(dx=columns, dy=0)
+    expansions_left += columns
+
+    print(f"Expanded map left by {columns} columns")
+    print_map_size_and_robot()
+
+
+def expand_map_right(columns=1):
+    global expansions_right
+    if columns <= 0:
+        return
+
+    for i in range(map_height()):
+        grid[i].extend(create_cell() for _ in range(columns))
+
+    expansions_right += columns
+
+    print(f"Expanded map right by {columns} columns")
+    print_map_size_and_robot()
+
+
+def expand_map_top(rows=1):
+    global robot_y, expansions_top
+    if rows <= 0:
+        return
+
+    width = map_width()
+    new_rows = [[create_cell() for _ in range(width)] for _ in range(rows)]
+
+    for row in reversed(new_rows):
+        grid.insert(0, row)
+
+    robot_y += rows
+    shift_position_stack(dx=0, dy=rows)
+    expansions_top += rows
+
+    print(f"Expanded map top by {rows} rows")
+    print_map_size_and_robot()
+
+
+def expand_map_bottom(rows=1):
+    global expansions_bottom
+    if rows <= 0:
+        return
+
+    width = map_width()
+    for _ in range(rows):
+        grid.append([create_cell() for _ in range(width)])
+
+    expansions_bottom += rows
+
+    print(f"Expanded map bottom by {rows} rows")
+    print_map_size_and_robot()
+
+
+def ensure_cell_exists(x, y):
+    """Ensure (x, y) exists, expanding map if needed. Returns adjusted coords."""
+    adjusted_x, adjusted_y = x, y
+
+    if adjusted_x < 0:
+        add = -adjusted_x
+        expand_map_left(add)
+        adjusted_x += add
+
+    if adjusted_y < 0:
+        add = -adjusted_y
+        expand_map_top(add)
+        adjusted_y += add
+
+    if adjusted_x >= map_width():
+        add = adjusted_x - map_width() + 1
+        expand_map_right(add)
+
+    if adjusted_y >= map_height():
+        add = adjusted_y - map_height() + 1
+        expand_map_bottom(add)
+
+    return adjusted_x, adjusted_y
+
+
+def ensure_margin_around_robot(margin=3):
+    """Keep free array-space margin around robot to avoid edge pinning."""
+    if robot_x < margin:
+        expand_map_left(margin - robot_x)
+
+    if robot_y < margin:
+        expand_map_top(margin - robot_y)
+
+    right_space = (map_width() - 1) - robot_x
+    if right_space < margin:
+        expand_map_right(margin - right_space)
+
+    bottom_space = (map_height() - 1) - robot_y
+    if bottom_space < margin:
+        expand_map_bottom(margin - bottom_space)
 
 
 def get_cell(x, y):
-    if not in_bounds(x, y):
-        return None
-    return grid[y][x]
+    ax, ay = ensure_cell_exists(x, y)
+    return grid[ay][ax]
 
 
 def mark_cell_state(x, y, state):
-    cell = get_cell(x, y)
-    if cell is None:
-        return
+    ax, ay = ensure_cell_exists(x, y)
+    cell = grid[ay][ax]
 
     # Do not downgrade an obstacle back to free based on a single later reading.
     if cell["state"] == OBSTACLE and state == FREE:
@@ -625,15 +742,13 @@ def mark_cell_state(x, y, state):
 
 def mark_current_cell_visited():
     cell = get_cell(robot_x, robot_y)
-    if cell is None:
-        return
     cell["visited"] = True
     if cell["state"] != OBSTACLE:
         cell["state"] = FREE
 
 
 def heading_after_relative(relative_direction):
-    """Return absolute heading if robot looks toward `relative_direction`."""
+    """Return absolute heading if robot looks toward relative_direction."""
     return (robot_heading + relative_direction) % 4
 
 
@@ -644,13 +759,12 @@ def neighbor_from_heading(x, y, heading):
 
 def neighbor_from_relative(relative_direction):
     abs_heading = heading_after_relative(relative_direction)
-    return neighbor_from_heading(robot_x, robot_y, abs_heading)
+    nx, ny = neighbor_from_heading(robot_x, robot_y, abs_heading)
+    return ensure_cell_exists(nx, ny)
 
 
 def update_neighbor_from_sensor(relative_direction, distance):
     nx, ny = neighbor_from_relative(relative_direction)
-    if not in_bounds(nx, ny):
-        return
 
     if distance == INVALID_DISTANCE:
         # Leave as unknown.
@@ -664,18 +778,23 @@ def update_neighbor_from_sensor(relative_direction, distance):
 
 
 def update_map_from_ultrasonic(front, left, right):
-    print(
-        f"Sensors | Front: {front} cm | Left: {left} cm | Right: {right} cm"
-    )
+    print(f"Sensors | Front: {front} cm | Left: {left} cm | Right: {right} cm")
+
+    # Explicitly ensure front/left/right neighbors exist before writing states.
+    neighbor_from_relative(REL_FRONT)
+    neighbor_from_relative(REL_LEFT)
+    neighbor_from_relative(REL_RIGHT)
+
     update_neighbor_from_sensor(REL_FRONT, front)
     update_neighbor_from_sensor(REL_LEFT, left)
     update_neighbor_from_sensor(REL_RIGHT, right)
 
 
 def cell_is_free_and_unvisited(x, y):
-    cell = get_cell(x, y)
-    if cell is None:
+    if not in_bounds(x, y):
         return False
+
+    cell = grid[y][x]
     if cell["state"] == OBSTACLE:
         return False
     if cell["visited"]:
@@ -723,6 +842,7 @@ def choose_next_grid_target():
 
     print("No more reachable cells.")
     return None
+
 
 def heading_toward_cell(target_x, target_y):
     dx = target_x - robot_x
@@ -782,21 +902,26 @@ def turn_to_heading(target_heading):
 
 def update_robot_position_forward():
     global robot_x, robot_y
-    dx, dy = HEADING_DELTAS[robot_heading]
-    robot_x += dx
-    robot_y += dy
+
+    tx, ty = neighbor_from_heading(robot_x, robot_y, robot_heading)
+    ensure_cell_exists(tx, ty)
+
+    # Recompute after potential left/top expansion shifted robot indices.
+    tx, ty = neighbor_from_heading(robot_x, robot_y, robot_heading)
+    tx, ty = ensure_cell_exists(tx, ty)
+
+    robot_x = tx
+    robot_y = ty
 
 
 def mark_front_as_obstacle():
     nx, ny = neighbor_from_relative(REL_FRONT)
-    if in_bounds(nx, ny):
-        mark_cell_state(nx, ny, OBSTACLE)
-        print(f"Marked front cell ({nx}, {ny}) as OBSTACLE.")
+    mark_cell_state(nx, ny, OBSTACLE)
+    print(f"Marked front cell ({nx}, {ny}) as OBSTACLE.")
 
 
 def move_forward_one_cell():
-    """Drive forward for CELL_DRIVE_TIME while watching front sensor.
-    Returns True on success, False if blocked mid-move."""
+    """Drive forward for CELL_DRIVE_TIME while watching front sensor."""
     print(
         f"Moving one cell forward from ({robot_x}, {robot_y}) "
         f"heading {HEADING_NAMES[robot_heading]}"
@@ -833,13 +958,8 @@ def move_forward_one_cell():
 # ============================================================================
 
 def sample_environment_placeholder():
-    """Placeholder for future DHT / air-quality readings.
-
-    Records a timestamped sample with None values into the current cell.
-    """
+    """Placeholder for future DHT / air-quality readings."""
     cell = get_cell(robot_x, robot_y)
-    if cell is None:
-        return
 
     sample = {
         "timestamp": datetime.now().isoformat(timespec="seconds"),
@@ -847,8 +967,8 @@ def sample_environment_placeholder():
         "humidity": None,
         "air_quality": None,
     }
+
     cell["samples"].append(sample)
-    # Mirror latest values at top level for convenience.
     cell["temperature"] = sample["temperature"]
     cell["humidity"] = sample["humidity"]
     cell["air_quality"] = sample["air_quality"]
@@ -860,9 +980,9 @@ def sample_environment_placeholder():
 
 def build_ascii_map():
     lines = []
-    for y in range(MAP_HEIGHT):
+    for y in range(map_height()):
         row_chars = []
-        for x in range(MAP_WIDTH):
+        for x in range(map_width()):
             if x == robot_x and y == robot_y:
                 row_chars.append(HEADING_ARROW[robot_heading])
                 continue
@@ -886,13 +1006,14 @@ def build_ascii_map():
 def print_ascii_map():
     print("\n--- MAP ---")
     print(build_ascii_map())
-    print(
-        f"Robot @ ({robot_x}, {robot_y}) heading {HEADING_NAMES[robot_heading]}"
-    )
+    print(f"Robot @ ({robot_x}, {robot_y}) heading {HEADING_NAMES[robot_heading]}")
     print("-----------\n")
 
 
-def save_map_files():
+def save_map_files(step_number=None):
+    if step_number is None:
+        step_number = current_step
+
     try:
         with open(MAP_ASCII_FILE, "w") as f:
             f.write(build_ascii_map())
@@ -902,8 +1023,8 @@ def save_map_files():
             )
 
         payload = {
-            "width": MAP_WIDTH,
-            "height": MAP_HEIGHT,
+            "width": map_width(),
+            "height": map_height(),
             "cell_size_cm": CELL_SIZE_CM,
             "robot": {
                 "x": robot_x,
@@ -911,32 +1032,45 @@ def save_map_files():
                 "heading": HEADING_NAMES[robot_heading],
             },
             "grid": grid,
+            "timestamp": datetime.now().isoformat(timespec="seconds"),
+            "step": step_number,
+            "expansions_left": expansions_left,
+            "expansions_right": expansions_right,
+            "expansions_top": expansions_top,
+            "expansions_bottom": expansions_bottom,
         }
+
         with open(MAP_JSON_FILE, "w") as f:
             json.dump(payload, f, indent=2)
+
     except Exception as e:
         print(f"Map save warning: {e}")
 
 
 # ============================================================================
-# GRID MAPPER MAIN LOOP
+# DYNAMIC GRID MAPPER MAIN LOOP
 # ============================================================================
 
-def run_grid_mapper():
-    global position_stack
+def run_dynamic_grid_mapper():
+    global position_stack, current_step
 
-    print("\nGrid mapper started.")
+    print("\nDynamic grid mapper started.")
     print("Press Ctrl+C to stop.\n")
 
     init_grid()
     position_stack = []
+    current_step = 0
+
+    ensure_margin_around_robot(margin=3)
 
     mark_current_cell_visited()
     sample_environment_placeholder()
+    save_map_files(step_number=current_step)
 
     steps = 0
     while steps < MAX_GRID_STEPS:
-        print(f"\n=== Step {steps + 1} / {MAX_GRID_STEPS} ===")
+        current_step = steps + 1
+        print(f"\n=== Step {current_step} / {MAX_GRID_STEPS} ===")
 
         # 1. Sense surroundings and update map.
         front, left, right = read_all_distances()
@@ -949,16 +1083,14 @@ def run_grid_mapper():
             break
 
         target_x, target_y, move_mode = target
+        target_x, target_y = ensure_cell_exists(target_x, target_y)
 
         # 3. Turn toward target.
         target_heading = heading_toward_cell(target_x, target_y)
         if not turn_to_heading(target_heading):
-            print("Turn failed. Retrying once after a short pause...")
-            sleep(0.5)
-            if not turn_to_heading(target_heading):
-                print("Turn failed twice. Stopping mapper to avoid corrupting the map.")
-                stop()
-                break
+            print("Turn failed. Stopping mapper to avoid corrupting the map.")
+            stop()
+            break
 
         # 4. Re-check front before committing to the move.
         front_recheck = read_distance_stable(TRIG_FRONT, ECHO_FRONT)
@@ -966,11 +1098,9 @@ def run_grid_mapper():
             front_recheck != INVALID_DISTANCE
             and front_recheck <= CELL_BLOCKED_DISTANCE
         ):
-            print(
-                f"Front recheck shows {front_recheck} cm -> mark obstacle, skip."
-            )
+            print(f"Front recheck shows {front_recheck} cm -> mark obstacle, skip.")
             mark_front_as_obstacle()
-            save_map_files()
+            save_map_files(step_number=current_step)
             print_ascii_map()
             steps += 1
             continue
@@ -984,23 +1114,22 @@ def run_grid_mapper():
 
         if ok:
             update_robot_position_forward()
-            if not in_bounds(robot_x, robot_y):
-                print("Robot position went outside the virtual map. Stopping.")
-                stop()
-                break
             mark_current_cell_visited()
             sample_environment_placeholder()
         else:
             mark_front_as_obstacle()
 
-        save_map_files()
+        # Keep expansion margin around robot after every movement attempt.
+        ensure_margin_around_robot(margin=3)
+
+        save_map_files(step_number=current_step)
         print_ascii_map()
 
         steps += 1
         sleep(LOOP_DELAY)
 
-    print("\nGrid mapping session ended.")
-    save_map_files()
+    print("\nDynamic grid mapping session ended.")
+    save_map_files(step_number=current_step)
     print_ascii_map()
 
 
@@ -1050,7 +1179,7 @@ try:
         f"GX:{gx:.2f} GY:{gy:.2f} GZ:{gz:.2f} deg/s"
     )
 
-    run_grid_mapper()
+    run_dynamic_grid_mapper()
 
 except KeyboardInterrupt:
     print("\nManual stop triggered.")
