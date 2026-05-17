@@ -1,0 +1,858 @@
+Yes — exactly. Your current robot is now at the stage where it can avoid obstacles, but it does not yet know where it is or where it has already been. For your final air-quality heatmap project, you need to add a mapping/navigation layer.
+
+Right now your robot is basically doing:
+
+See obstacle -> turn
+See free space -> move
+
+For the air-quality project, you want:
+
+Know current grid cell
+Scan nearby cells
+Move deliberately
+Record measurement at this location
+Update map
+Choose next unexplored area
+Repeat
+
+So the next big upgrade is to stop thinking of it as “random autonomous driving” and start thinking of it as a grid explorer.
+
+Best Strategy for Your Project
+
+For your hardware, the best practical strategy is:
+
+Grid-based room mapping + planned exploration + air-quality sampling per cell
+
+Not full SLAM yet.
+
+Full SLAM usually needs better localization, like:
+
+wheel encoders
+camera tracking
+AprilTags / ArUco markers
+LiDAR
+depth camera
+
+With your current setup:
+
+3 ultrasonic sensors
+MPU6050 gyro
+4 motors without encoders
+
+you can still build a useful rough occupancy grid map, but it will not be centimeter-accurate. That is fine for a school/final project if you explain the limitations.
+
+The Main Problem You Need To Solve
+
+For a heatmap, every measurement needs a position:
+
+temperature = 23.4 C
+humidity = 41%
+air quality = X
+location = ?
+
+So the real question is:
+
+How does the robot estimate its location?
+
+Currently, it does not. It only reacts.
+
+The simplest solution is to define the room as a matrix.
+
+Example:
+
+Room grid:
+
+[ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ]
+[ ][ ][R][ ][ ]
+[ ][ ][ ][ ][ ]
+[ ][ ][ ][ ][ ]
+
+R = robot starting position
+
+The robot starts at a known cell, for example:
+
+robot_x = 10
+robot_y = 10
+robot_heading = NORTH
+
+Then every time it moves forward one cell, you update:
+
+robot_y -= 1
+
+or depending on heading:
+
+NORTH -> y - 1
+EAST  -> x + 1
+SOUTH -> y + 1
+WEST  -> x - 1
+Recommended Implementation Levels
+
+I would build this in stages.
+
+Level 1: Grid Position Tracking
+
+Create a virtual map.
+
+Example:
+
+MAP_WIDTH = 20
+MAP_HEIGHT = 20
+CELL_SIZE_CM = 35
+
+Start the robot in the center:
+
+robot_x = MAP_WIDTH // 2
+robot_y = MAP_HEIGHT // 2
+robot_heading = 0  # 0=NORTH, 1=EAST, 2=SOUTH, 3=WEST
+
+Use heading constants:
+
+NORTH = 0
+EAST = 1
+SOUTH = 2
+WEST = 3
+
+DIRECTIONS = {
+    NORTH: (0, -1),
+    EAST:  (1, 0),
+    SOUTH: (0, 1),
+    WEST:  (-1, 0),
+}
+
+Then after a successful forward movement:
+
+dx, dy = DIRECTIONS[robot_heading]
+robot_x += dx
+robot_y += dy
+
+This creates your first “where am I?” system.
+
+Level 2: Occupancy Grid
+
+Each cell in the matrix can be:
+
+UNKNOWN = -1
+FREE = 0
+OBSTACLE = 1
+VISITED = 2
+
+Example map:
+
+? ? ? ? ?
+? # # ? ?
+? . R . ?
+? ? . ? ?
+? ? ? ? ?
+
+Where:
+
+? = unknown
+# = obstacle
+. = free / visited
+R = robot
+
+The robot uses its ultrasonic sensors to update nearby cells.
+
+For example, if the front sensor sees an obstacle closer than one cell:
+
+front < CELL_SIZE_CM
+
+then mark the cell in front as:
+
+OBSTACLE
+
+If front is clear:
+
+front > CELL_SIZE_CM
+
+then mark the front cell as:
+
+FREE
+
+Same idea for left and right sensors, but you translate left/right relative to the robot’s heading.
+
+Level 3: Move One Cell at a Time
+
+This is very important.
+
+Do not let the robot continuously roam when mapping.
+
+Instead, make it move like this:
+
+scan
+choose next cell
+turn toward that cell
+move forward one cell
+stop
+scan again
+record measurement
+update map
+repeat
+
+So instead of this:
+
+forward()
+sleep(0.1)
+
+you eventually want something like this:
+
+move_forward_one_cell()
+
+For now, because you do not have wheel encoders, this will be time-based.
+
+Example:
+
+CELL_DRIVE_TIME = 0.75
+
+Then:
+
+def move_forward_one_cell():
+    forward(SPEED_FORWARD)
+    sleep(CELL_DRIVE_TIME)
+    stop()
+
+But this must be calibrated.
+
+You would create a test where the robot moves forward and you adjust CELL_DRIVE_TIME until it travels about:
+
+30 cm or 35 cm or 40 cm
+
+This is the weakest part of your current hardware, because without wheel encoders the robot does not truly know how far it moved.
+
+Important Hardware Limitation
+
+Your robot can measure turning well now because the MPU6050 gives yaw.
+
+But it cannot measure forward distance accurately because it has:
+
+no wheel encoders
+no optical flow
+no camera localization
+no LiDAR
+
+So the robot can say:
+
+I turned about 30 or 90 degrees
+
+but it cannot accurately say:
+
+I moved exactly 35 cm
+
+That means your map will drift over time.
+
+For a first version, this is okay. For a better final version, I strongly recommend adding:
+
+wheel encoders
+
+or using the camera with markers.
+
+Best First Mapping Strategy
+
+The best first strategy for you is:
+
+manual starting point + grid exploration + ultrasonic obstacle marking
+
+Do this:
+
+1. Place the robot at a known starting point.
+2. Tell the code: robot starts at grid center.
+3. Tell the code: robot starts facing NORTH.
+4. Robot scans front/left/right.
+5. Robot marks obstacles/free cells.
+6. Robot moves to an unvisited clear neighboring cell.
+7. Robot records environmental data.
+8. Robot repeats.
+
+This is much better than random movement.
+
+Exploration Strategy Options
+
+You have several options.
+
+Option A: Wall Following
+
+This is the easiest.
+
+The robot follows one wall and maps as it goes.
+
+Example logic:
+
+If right side is clear -> turn right and move
+Else if front is clear -> move forward
+Else if left is clear -> turn left
+Else -> turn around
+
+Pros:
+
+easy to implement
+stable
+good for demos
+
+Cons:
+
+may not cover the whole room
+can loop around the edges
+not ideal for full heatmap
+
+This is good as a first mapping demo.
+
+Option B: DFS Grid Exploration
+
+This is probably the best next step.
+
+DFS means depth-first search.
+
+Simple idea:
+
+Visit a cell
+Look for unvisited neighboring cells
+Move to one
+If stuck, go back
+
+Pros:
+
+good for unknown rooms
+easy to understand
+works with a grid
+can cover many cells
+
+Cons:
+
+needs backtracking logic
+position error can accumulate
+
+This is a good strategy for your robot.
+
+Option C: Frontier Exploration
+
+This is the more advanced and better robotics strategy.
+
+A “frontier” is a free cell next to an unknown cell.
+
+Example:
+
+Known free area next to unknown area = frontier
+
+The robot repeatedly chooses the nearest frontier and goes there.
+
+Pseudo-logic:
+
+while True:
+    scan_and_update_map()
+    record_environment_sample()
+
+    frontiers = find_frontier_cells()
+
+    if not frontiers:
+        stop()
+        break
+
+    target = choose_nearest_frontier(frontiers)
+    path = astar(robot_position, target)
+    follow_path(path)
+
+Pros:
+
+more intelligent
+less random
+better map coverage
+closer to real autonomous mapping
+
+Cons:
+
+needs path planning
+needs better position tracking
+
+I would not start here immediately, but this is where the project should go.
+
+Option D: Predefined Room Matrix
+
+This is the easiest for a final demo.
+
+You manually define the room:
+
+10 x 8 grid
+known walls
+known obstacles maybe
+
+Then the robot follows a planned path, like a lawnmower pattern:
+
+row 1 left to right
+move down
+row 2 right to left
+move down
+row 3 left to right
+...
+
+Pros:
+
+very reliable
+best for heatmap demo
+easy to explain
+easy to visualize
+
+Cons:
+
+less autonomous
+robot is not discovering the room from zero
+
+This is actually a very good project strategy if the main goal is the air-quality heatmap, not SLAM.
+
+My Recommendation
+
+For your final project, I would do this:
+
+Phase 1: Grid mapping without DHT/air-quality sensor
+Phase 2: Add temperature/humidity/air-quality sampling per grid cell
+Phase 3: Generate heatmap from saved measurements
+Phase 4: Improve localization with encoders or camera markers
+
+More specifically:
+
+Current version:
+Reactive ultrasonic + gyro avoidance
+
+Next version:
+Grid explorer with position tracking
+
+Then:
+Grid explorer + map saving
+
+Then:
+Grid explorer + DHT/environment sensor values
+
+Then:
+Heatmap visualization
+Suggested Robot Map Structure
+
+Use a Python class or dictionary per cell.
+
+Example:
+
+def create_cell():
+    return {
+        "state": "unknown",      # unknown, free, obstacle
+        "visited": False,
+        "samples": 0,
+        "temperature": None,
+        "humidity": None,
+        "air_quality": None,
+    }
+
+Create the map:
+
+MAP_WIDTH = 20
+MAP_HEIGHT = 20
+
+grid = [
+    [create_cell() for _ in range(MAP_WIDTH)]
+    for _ in range(MAP_HEIGHT)
+]
+
+When robot visits a cell:
+
+cell = grid[robot_y][robot_x]
+cell["state"] = "free"
+cell["visited"] = True
+
+Later, when you add the DHT sensor:
+
+cell["temperature"] = temperature
+cell["humidity"] = humidity
+cell["samples"] += 1
+
+If you add a real air-quality sensor:
+
+cell["air_quality"] = air_quality_value
+Important Note About DHT
+
+A DHT sensor gives you:
+
+temperature
+humidity
+
+It does not measure air quality by itself.
+
+For real air quality, you probably want one of these later:
+
+BME680       -> temperature, humidity, pressure, gas resistance
+SGP30        -> VOC / eCO2 estimate
+CCS811       -> VOC / eCO2 estimate
+PMS5003      -> particulate matter PM1.0 / PM2.5 / PM10
+MQ135        -> gas sensor, cheaper but less precise
+
+A DHT sensor is still useful because humidity and temperature affect air-quality readings, but for an “air quality heatmap,” DHT alone is not enough.
+
+Heatmap Concept
+
+Once the robot knows its grid position, the heatmap is easy.
+
+Example grid:
+
+Temperature map:
+
+22.1  22.3  22.5
+22.0  22.4  22.9
+21.8  22.2  23.1
+
+Humidity map:
+
+42%  43%  44%
+41%  42%  46%
+40%  41%  48%
+
+Air quality map:
+
+80   85   90
+75   82   110
+70   76   130
+
+You can save measurements as CSV:
+
+x,y,temperature,humidity,air_quality,timestamp
+10,10,22.4,43.0,85,2026-05-16 15:10:00
+10,9,22.5,43.5,88,2026-05-16 15:10:12
+11,9,22.7,44.1,92,2026-05-16 15:10:25
+
+Then generate a heatmap on your laptop or directly on the Pi using Python.
+
+Best Movement Pattern for Heatmap
+
+For heatmap quality, you want the robot to stop and measure.
+
+Do not measure while moving.
+
+Better behavior:
+
+Move to cell
+Stop
+Wait 1-3 seconds
+Take multiple readings
+Average them
+Save reading
+Move to next cell
+
+For DHT, this is especially important because readings are not instant.
+
+For gas sensors, this is even more important because many air-quality sensors need time to stabilize.
+
+What I Would Build Next
+
+I would create a new file:
+
+autonomous_grid_mapper.py
+
+This should reuse your current functions:
+
+forward()
+backward()
+rotate_left_angle()
+rotate_right_angle()
+read_all_distances()
+stop()
+cleanup_and_exit()
+
+But replace:
+
+run_autonomous()
+
+with:
+
+run_grid_mapper()
+
+The new structure should be:
+
+def run_grid_mapper():
+    initialize_map()
+    mark_current_cell_visited()
+
+    while True:
+        front, left, right = read_all_distances()
+
+        update_map_from_sensors(front, left, right)
+        save_map_to_file()
+
+        next_direction = choose_next_unvisited_direction()
+
+        if next_direction is None:
+            print("Exploration finished or stuck.")
+            stop()
+            break
+
+        turn_to_direction(next_direction)
+
+        if front_path_is_clear():
+            move_forward_one_cell()
+            update_robot_position()
+        else:
+            stop()
+Simple First Version Logic
+
+For the first grid mapper, do not implement A* yet.
+
+Use this priority:
+
+1. Prefer moving forward if the front cell is clear and unvisited.
+2. Else try left if left cell is clear and unvisited.
+3. Else try right if right cell is clear and unvisited.
+4. Else turn around or backup.
+
+This is simple and already much less random than your current behavior.
+
+Example Mapping Loop
+
+Conceptually:
+
+def run_grid_mapper():
+    global robot_x, robot_y, robot_heading
+
+    mark_visited(robot_x, robot_y)
+
+    while True:
+        front, left, right = read_all_distances()
+
+        update_map_from_ultrasonic(front, left, right)
+        print_ascii_map()
+
+        next_move = choose_next_grid_move(front, left, right)
+
+        if next_move == "forward":
+            move_forward_one_cell()
+            update_position_forward()
+
+        elif next_move == "left":
+            turn_left_90()
+            move_forward_one_cell()
+            update_heading_left()
+            update_position_forward()
+
+        elif next_move == "right":
+            turn_right_90()
+            move_forward_one_cell()
+            update_heading_right()
+            update_position_forward()
+
+        elif next_move == "turn_around":
+            turn_around_180()
+
+        else:
+            stop()
+            break
+You Will Need 90-Degree Turns
+
+Your current obstacle avoidance uses:
+
+TURN_ANGLE = 30.0
+
+For mapping, you need cardinal directions:
+
+NORTH
+EAST
+SOUTH
+WEST
+
+So mapping should use:
+
+TURN_90_ANGLE = 90.0
+
+or maybe tuned:
+
+TURN_90_ANGLE = 85.0
+
+depending on how much the robot overshoots.
+
+You already proved gyro-assisted turning works, so this is the next test:
+
+Can the robot turn approximately 90 degrees left/right?
+
+You should make:
+
+test_90_degree_turn.py
+
+before using grid mapping.
+
+You Will Need Forward Cell Calibration
+
+You also need:
+
+test_move_one_cell.py
+
+Goal:
+
+At speed 35 or 40, how many seconds does it need to move 35 cm?
+
+Example:
+
+CELL_DRIVE_TIME = 0.75
+CELL_SIZE_CM = 35
+
+Then test:
+
+Does it move one grid cell?
+
+This is very important. Without this, your map position will be wrong.
+
+Best Final Architecture
+
+Eventually your project should be split like this:
+
+robot/
+├── motors.py
+├── ultrasonic.py
+├── imu.py
+├── movement.py
+├── mapper.py
+├── planner.py
+├── environment_sensor.py
+├── heatmap.py
+└── main.py
+
+But for now, keeping one file is okay while testing.
+
+Practical Roadmap
+
+I would do the next steps in this exact order:
+
+1. Test 90-degree gyro turns
+2. Test move-forward-one-cell timing
+3. Add grid position: x, y, heading
+4. Add simple ASCII map printing
+5. Add map updates from ultrasonic sensors
+6. Add simple DFS/wall-following grid exploration
+7. Save map data to CSV/JSON
+8. Add DHT temperature/humidity
+9. Add real air-quality sensor
+10. Generate heatmap
+The Best First Implementation
+
+For your current hardware, the best next implementation is:
+
+A 20x20 unknown grid
+Robot starts in center
+Robot heading starts NORTH
+Robot turns only 90 degrees
+Robot moves one cell at a time
+Robot scans front/left/right
+Robot marks free/obstacle/visited cells
+Robot saves readings per cell
+
+This is simple, explainable, and compatible with your final heatmap goal.
+
+It turns your robot from:
+
+random obstacle avoider
+
+into:
+
+mapping rover
+
+That is the correct next step.
+
+
+Strategy 2: Grid + Camera Markers
+
+This is the best option for your final project.
+
+Same grid system
+Add ArUco markers around the room
+Camera recognizes markers
+Robot corrects position
+
+Pros:
+
+Much more reliable
+Still realistic to implement
+Looks impressive in a demo
+Easy to explain
+Works well indoors
+
+Cons:
+
+Requires printing markers
+Requires camera calibration/testing
+Needs decent lighting
+
+This is what I recommend.
+
+Recommended Camera Strategy: ArUco Markers
+
+For your project, I would use ArUco markers.
+
+ArUco markers are printed square markers that OpenCV can detect. OpenCV’s ArUco module is specifically used for marker detection and pose estimation, which is useful for robot navigation and localization.
+
+You would print markers like this:
+
+Marker 1 -> wall near grid cell (0, 0)
+Marker 2 -> wall near grid cell (5, 0)
+Marker 3 -> wall near grid cell (5, 5)
+Marker 4 -> wall near grid cell (0, 5)
+
+Then in code:
+
+known_markers = {
+    1: {"x": 0, "y": 0, "heading": "NORTH"},
+    2: {"x": 5, "y": 0, "heading": "EAST"},
+    3: {"x": 5, "y": 5, "heading": "SOUTH"},
+    4: {"x": 0, "y": 5, "heading": "WEST"},
+}
+
+When the camera sees marker 2, the robot can say:
+
+I am near the right side of the room.
+My position estimate should be corrected.
+
+This gives you a much more reliable map than only motor timing.
+
+Best Final Project Architecture
+
+I would build it like this:
+
+1. Robot starts at known grid location
+2. Robot explores one cell at a time
+3. Ultrasonic sensors mark nearby obstacles
+4. MPU6050 controls 90-degree turns
+5. Camera checks for ArUco markers
+6. If marker is detected, correct robot position/heading
+7. Robot stops in each cell
+8. Sensor records temperature/humidity/air quality
+9. Data is saved with x,y position
+10. Generate heatmap from saved data
+
+That is a very strong final project.
+
+Important: DHT Is Not Air Quality
+
+A DHT sensor gives you temperature and humidity, not real air quality. DHT22-type sensors output relative humidity and temperature data.
+
+For an actual air-quality heatmap, later consider adding one of these:
+
+BME680  -> temperature, humidity, pressure, gas resistance
+SGP30   -> VOC / eCO2 estimate
+CCS811  -> VOC / eCO2 estimate
+PMS5003 -> particulate matter PM1.0 / PM2.5 / PM10
+MQ135   -> cheap gas sensor, less precise
+
+A good final setup could be:
+
+DHT22 + PMS5003
+
+or:
+
+BME680 + PMS5003
+
+DHT alone is still useful, but call it a temperature/humidity heatmap, not an air-quality heatmap.
+
+Camera Software Choice
+
+For Raspberry Pi Camera Module V2, use Picamera2 with OpenCV.
+
+Picamera2 is the modern libcamera-based Python library for Raspberry Pi cameras, replacing the old legacy Picamera stack. Raspberry Pi’s official camera documentation also covers the supported camera software stack for official camera modules.
+
+Your camera pipeline would be:
+
+Picamera2 captures frame
+OpenCV processes frame
+OpenCV detects ArUco marker
+Marker ID gives map reference
+Robot corrects estimated position
