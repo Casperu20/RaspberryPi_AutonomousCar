@@ -59,8 +59,8 @@ RL_PINS = (25, 24, 12)  # Rear Left
 RR_PINS = (6, 5, 19)    # Rear Right
 
 MOTOR_FL_DIR = 1
-MOTOR_FR_DIR = -1
-MOTOR_RL_DIR = 1
+MOTOR_FR_DIR = 1
+MOTOR_RL_DIR = -1
 MOTOR_RR_DIR = -1
 
 # ============================================================================
@@ -96,19 +96,39 @@ GYRO_ZOUT_H = 0x47
 # SPEED / DRIVE SETTINGS
 # ============================================================================
 
-SPEED_FORWARD = 70
-SPEED_BACKWARD = 70
-SPEED_ROTATE = 70
+# Calibrated base velocities
+SPEED_FORWARD = 55          # Matches your calibrated forward crawl (was 40)
+SPEED_BACKWARD = 55
+SPEED_ROTATE = 55          # High-torque target velocity for spin maneuvers (was 55)
+
+# 1. Driving Calibration (Compensates for slow rear gearboxes)
+CALIBRATION_FL = 0.40  
+CALIBRATION_FR = 0.40  
+CALIBRATION_RL = 1.00  
+CALIBRATION_RR = 1.00  
+
+# 2. Rotation-Specific Calibration
+ROT_CALIBRATION_FL = 0.50  
+ROT_CALIBRATION_FR = 0.50  
+ROT_CALIBRATION_RL = 1.00  
+ROT_CALIBRATION_RR = 1.00  
 
 FRONT_SAFE_DISTANCE = 30
-FRONT_DANGER_DISTANCE = 18
+FRONT_DANGER_DISTANCE = 15
 SIDE_CLEAR_DISTANCE = 25
+
+# NEW: MPU6050 physical snag detection
+# MPU6050 Filtered Snag Detection
+CARPET_TILT_THRESHOLD = 0.95  # Detects ~3.5 degrees of sustained tilt (gravity leak)
+CRASH_SPIKE_THRESHOLD = 0.95  # Detects a sudden, hard physical impact
+
+BACKUP_TIME = 0.35
 
 BACKUP_TIME = 0.35
 LOOP_DELAY = 0.10
 
 TURN_ANGLE = 30.0
-TURN_90_ANGLE = 90.0
+TURN_90_ANGLE = 88.0
 GYRO_DEADBAND = 0.8
 MAX_TURN_TIME = 4.0
 
@@ -385,38 +405,48 @@ def set_motor(pins, pwm, direction, speed, dir_multiplier):
 
 def forward(speed=SPEED_FORWARD):
     print("ACTION: Forward")
-
-    set_motor(FL_PINS, pwm_fl, -1, speed, MOTOR_FL_DIR)
-    set_motor(FR_PINS, pwm_fr, -1, speed, MOTOR_FR_DIR)
-    set_motor(RL_PINS, pwm_rl, -1, speed, MOTOR_RL_DIR)
-    set_motor(RR_PINS, pwm_rr, -1, speed, MOTOR_RR_DIR)
+    set_motor(FL_PINS, pwm_fl, -1, int(speed * CALIBRATION_FL), MOTOR_FL_DIR)
+    set_motor(FR_PINS, pwm_fr, -1, int(speed * CALIBRATION_FR), MOTOR_FR_DIR)
+    set_motor(RL_PINS, pwm_rl, -1, int(speed * CALIBRATION_RL), MOTOR_RL_DIR)
+    set_motor(RR_PINS, pwm_rr, -1, int(speed * CALIBRATION_RR), MOTOR_RR_DIR)
 
 
 def backward(speed=SPEED_BACKWARD):
     print("ACTION: Backward")
-
-    set_motor(FL_PINS, pwm_fl, 1, speed, MOTOR_FL_DIR)
-    set_motor(FR_PINS, pwm_fr, 1, speed, MOTOR_FR_DIR)
-    set_motor(RL_PINS, pwm_rl, 1, speed, MOTOR_RL_DIR)
-    set_motor(RR_PINS, pwm_rr, 1, speed, MOTOR_RR_DIR)
+    set_motor(FL_PINS, pwm_fl, 1, int(speed * CALIBRATION_FL), MOTOR_FL_DIR)
+    set_motor(FR_PINS, pwm_fr, 1, int(speed * CALIBRATION_FR), MOTOR_FR_DIR)
+    set_motor(RL_PINS, pwm_rl, 1, int(speed * CALIBRATION_RL), MOTOR_RL_DIR)
+    set_motor(RR_PINS, pwm_rr, 1, int(speed * CALIBRATION_RR), MOTOR_RR_DIR)
 
 
 def rotate_right(speed=SPEED_ROTATE):
-    print("ACTION: Rotate Right")
+    print("Calibrated Pivot: Rotate Right")
+    
+    speed_fl = int(speed * ROT_CALIBRATION_FL)
+    speed_fr = int(speed * ROT_CALIBRATION_FR)
+    speed_rl = int(speed * ROT_CALIBRATION_RL)
+    speed_rr = int(speed * ROT_CALIBRATION_RR)
 
-    set_motor(FL_PINS, pwm_fl, 1, speed, MOTOR_FL_DIR)
-    set_motor(FR_PINS, pwm_fr, -1, speed, MOTOR_FR_DIR)
-    set_motor(RL_PINS, pwm_rl, -1, speed, MOTOR_RL_DIR)
-    set_motor(RR_PINS, pwm_rr, 1, speed, MOTOR_RR_DIR)
+    # Force the entire left side FORWARD and the entire right side BACKWARD
+    set_motor(FL_PINS, pwm_fl, direction=-1, speed=speed_fl, dir_multiplier=1) # FL Forward
+    set_motor(RL_PINS, pwm_rl, direction=1,  speed=speed_rl, dir_multiplier=1) # RL Forward
+    set_motor(FR_PINS, pwm_fr, direction=1,  speed=speed_fr, dir_multiplier=1) # FR Backward
+    set_motor(RR_PINS, pwm_rr, direction=-1, speed=speed_rr, dir_multiplier=1) # RR Backward
 
 
 def rotate_left(speed=SPEED_ROTATE):
-    print("ACTION: Rotate Left")
+    print("Calibrated Pivot: Rotate Left")
+    
+    speed_fl = int(speed * ROT_CALIBRATION_FL)
+    speed_fr = int(speed * ROT_CALIBRATION_FR)
+    speed_rl = int(speed * ROT_CALIBRATION_RL)
+    speed_rr = int(speed * ROT_CALIBRATION_RR)
 
-    set_motor(FL_PINS, pwm_fl, -1, speed, MOTOR_FL_DIR)
-    set_motor(FR_PINS, pwm_fr, 1, speed, MOTOR_FR_DIR)
-    set_motor(RL_PINS, pwm_rl, 1, speed, MOTOR_RL_DIR)
-    set_motor(RR_PINS, pwm_rr, -1, speed, MOTOR_RR_DIR)
+    # Force the entire left side BACKWARD and the entire right side FORWARD
+    set_motor(FL_PINS, pwm_fl, direction=1,  speed=speed_fl, dir_multiplier=1) # FL Backward
+    set_motor(RL_PINS, pwm_rl, direction=-1, speed=speed_rl, dir_multiplier=1) # RL Backward
+    set_motor(FR_PINS, pwm_fr, direction=-1, speed=speed_fr, dir_multiplier=1) # FR Forward
+    set_motor(RR_PINS, pwm_rr, direction=1,  speed=speed_rr, dir_multiplier=1) # RR Forward
 
 
 def stop():
@@ -803,7 +833,16 @@ def move_forward_one_cell():
     )
 
     danger_streak = 0
+    tilt_streak = 0
+
+    # Pre-load the filter with the resting baseline instead of 0.0
+    base_ax, base_ay, _, _, _ = get_clean_imu_data()
+    ax_smooth = base_ax
+    ay_smooth = base_ay
+
     forward(CELL_DRIVE_SPEED)
+    # Give the motors 150ms to overcome static friction before monitoring
+    sleep(0.20)
     start = time.monotonic()
 
     try:
@@ -820,6 +859,39 @@ def move_forward_one_cell():
             else:
                 danger_streak = 0
 
+            # 2. Check Filtered Accelerometer (For Carpets & Snags)
+            ax, ay, _, _, _ = get_clean_imu_data()
+            
+            # Apply low-pass filter to erase AC motor noise and expose DC gravity tilt
+            ax_smooth = (ax_smooth * 0.7) + (ax * 0.3)
+            ay_smooth = (ay_smooth * 0.7) + (ay * 0.3)
+            
+            # Condition A: The chassis is resting tilted on a carpet lip
+            if abs(ax_smooth) > CARPET_TILT_THRESHOLD or abs(ay_smooth) > CARPET_TILT_THRESHOLD:
+                tilt_streak += 1
+                # Require ~120ms of sustained tilt to confirm it's stuck
+                if tilt_streak >= 4:
+                    print(f"Carpet lip detected! Chassis tilted (AX:{ax_smooth:.2f}, AY:{ay_smooth:.2f})")
+                    stop()
+                    sleep(0.1)
+                    print("Executing micro-backup to free chassis...")
+                    backward(CELL_DRIVE_SPEED)
+                    sleep(BACKUP_TIME)
+                    stop()
+                    return False
+            else:
+                tilt_streak = 0
+
+            # Condition B: A hard, sudden physical crash into a low object
+            if abs(ax) > CRASH_SPIKE_THRESHOLD or abs(ay) > CRASH_SPIKE_THRESHOLD:
+                print(f"Hard physical crash detected! (AX:{ax:.2f}, AY:{ay:.2f})")
+                stop()
+                sleep(0.1)
+                backward(CELL_DRIVE_SPEED)
+                sleep(BACKUP_TIME)
+                stop()
+                return False
+            
             sleep(0.03)
     finally:
         stop()

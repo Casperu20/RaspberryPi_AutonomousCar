@@ -46,8 +46,8 @@ MOTOR_RR_DIR = -1
 # SPEED SETTINGS
 # ============================================================================
 
-SPEED_FORWARD_BACKWARD = 45
-SPEED_ROTATE = 65
+SPEED_FORWARD_BACKWARD = 50
+SPEED_ROTATE = 60
 
 # 1. Straight Line Calibration (Forward/Backward)
 CALIBRATION_FL = 0.40  
@@ -163,33 +163,33 @@ def backward(speed=SPEED_FORWARD_BACKWARD):
     set_motor(RR_PINS, pwm_rr, 1, speed_rr, MOTOR_RR_DIR)
 
 def rotate_right(speed=SPEED_ROTATE):
-    print("Rotate Right")
+    print("Calibrated Pivot: Rotate Right")
     
-    # Use rotation-specific calibration here
     speed_fl = int(speed * ROT_CALIBRATION_FL)
     speed_fr = int(speed * ROT_CALIBRATION_FR)
     speed_rl = int(speed * ROT_CALIBRATION_RL)
     speed_rr = int(speed * ROT_CALIBRATION_RR)
 
-    set_motor(FL_PINS, pwm_fl, -1, speed_fl, MOTOR_FL_DIR)
-    set_motor(FR_PINS, pwm_fr, 1, speed_fr, MOTOR_FR_DIR)
-    set_motor(RL_PINS, pwm_rl, 1, speed_rl, MOTOR_RL_DIR)
-    set_motor(RR_PINS, pwm_rr, -1, speed_rr, MOTOR_RR_DIR)
+    # Force the entire left side FORWARD and the entire right side BACKWARD
+    set_motor(FL_PINS, pwm_fl, direction=-1, speed=speed_fl, dir_multiplier=1) # FL Forward
+    set_motor(RL_PINS, pwm_rl, direction=1,  speed=speed_rl, dir_multiplier=1) # RL Forward
+    set_motor(FR_PINS, pwm_fr, direction=1,  speed=speed_fr, dir_multiplier=1) # FR Backward
+    set_motor(RR_PINS, pwm_rr, direction=-1, speed=speed_rr, dir_multiplier=1) # RR Backward
 
 
 def rotate_left(speed=SPEED_ROTATE):
-    print("Rotate Left")
+    print("Calibrated Pivot: Rotate Left")
     
-    # Use rotation-specific calibration here
     speed_fl = int(speed * ROT_CALIBRATION_FL)
     speed_fr = int(speed * ROT_CALIBRATION_FR)
     speed_rl = int(speed * ROT_CALIBRATION_RL)
     speed_rr = int(speed * ROT_CALIBRATION_RR)
 
-    set_motor(FL_PINS, pwm_fl, 1, speed_fl, MOTOR_FL_DIR)
-    set_motor(FR_PINS, pwm_fr, -1, speed_fr, MOTOR_FR_DIR)
-    set_motor(RL_PINS, pwm_rl, -1, speed_rl, MOTOR_RL_DIR)
-    set_motor(RR_PINS, pwm_rr, 1, speed_rr, MOTOR_RR_DIR)
+    # Force the entire left side BACKWARD and the entire right side FORWARD
+    set_motor(FL_PINS, pwm_fl, direction=1,  speed=speed_fl, dir_multiplier=1) # FL Backward
+    set_motor(RL_PINS, pwm_rl, direction=-1, speed=speed_rl, dir_multiplier=1) # RL Backward
+    set_motor(FR_PINS, pwm_fr, direction=-1, speed=speed_fr, dir_multiplier=1) # FR Forward
+    set_motor(RR_PINS, pwm_rr, direction=1,  speed=speed_rr, dir_multiplier=1) # RR Forward
 
 def stop():
     """Stop all motors."""
