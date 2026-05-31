@@ -6,7 +6,7 @@ Dynamic Grid Mapper
 Based on autonomous_grid_mapper.py, but with automatic map expansion.
 
 Map symbols (ASCII):
-? = unknown
+? = unknown 
 . = free
 * = visited
 # = obstacle

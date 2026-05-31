@@ -38,16 +38,28 @@ RR_PINS = (6, 5, 19)    # Rear Right
 # ============================================================================
 
 MOTOR_FL_DIR = 1
-MOTOR_FR_DIR = -1
-MOTOR_RL_DIR = 1
+MOTOR_FR_DIR = 1
+MOTOR_RL_DIR = -1
 MOTOR_RR_DIR = -1
 
 # ============================================================================
 # SPEED SETTINGS
 # ============================================================================
 
-SPEED_FORWARD_BACKWARD = 70
-SPEED_ROTATE = 70
+SPEED_FORWARD_BACKWARD = 45
+SPEED_ROTATE = 65
+
+# 1. Straight Line Calibration (Forward/Backward)
+CALIBRATION_FL = 0.40  
+CALIBRATION_FR = 0.40  
+CALIBRATION_RL = 1.00  
+CALIBRATION_RR = 1.00  
+
+# 2. Rotation Calibration (Specifically for Spin Tuning)
+ROT_CALIBRATION_FL = 0.55  # Boost the front wheels specifically during turns
+ROT_CALIBRATION_FR = 0.55  
+ROT_CALIBRATION_RL = 1.00  
+ROT_CALIBRATION_RR = 1.00
 
 # ============================================================================
 # GPIO SETUP
@@ -116,7 +128,6 @@ def set_motor(pins, pwm, direction, speed, dir_multiplier):
         GPIO.output(rev_pin, GPIO.LOW)
         pwm.ChangeDutyCycle(0)
 
-
 # ============================================================================
 # MOVEMENT FUNCTIONS
 # ============================================================================
@@ -124,40 +135,61 @@ def set_motor(pins, pwm, direction, speed, dir_multiplier):
 def forward(speed=SPEED_FORWARD_BACKWARD):
     """Move forward."""
     print("Forward")
+    
+    # Calculate calibrated speeds dynamically
+    speed_fl = int(speed * CALIBRATION_FL)
+    speed_fr = int(speed * CALIBRATION_FR)
+    speed_rl = int(speed * CALIBRATION_RL)
+    speed_rr = int(speed * CALIBRATION_RR)
 
-    set_motor(FL_PINS, pwm_fl, -1, speed, MOTOR_FL_DIR)
-    set_motor(FR_PINS, pwm_fr, -1, speed, MOTOR_FR_DIR)
-    set_motor(RL_PINS, pwm_rl, -1, speed, MOTOR_RL_DIR)
-    set_motor(RR_PINS, pwm_rr, -1, speed, MOTOR_RR_DIR)
+    set_motor(FL_PINS, pwm_fl, -1, speed_fl, MOTOR_FL_DIR)
+    set_motor(FR_PINS, pwm_fr, -1, speed_fr, MOTOR_FR_DIR)
+    set_motor(RL_PINS, pwm_rl, -1, speed_rl, MOTOR_RL_DIR)
+    set_motor(RR_PINS, pwm_rr, -1, speed_rr, MOTOR_RR_DIR)
 
 
 def backward(speed=SPEED_FORWARD_BACKWARD):
     """Move backward."""
     print("Backward")
+    
+    speed_fl = int(speed * CALIBRATION_FL)
+    speed_fr = int(speed * CALIBRATION_FR)
+    speed_rl = int(speed * CALIBRATION_RL)
+    speed_rr = int(speed * CALIBRATION_RR)
 
-    set_motor(FL_PINS, pwm_fl, 1, speed, MOTOR_FL_DIR)
-    set_motor(FR_PINS, pwm_fr, 1, speed, MOTOR_FR_DIR)
-    set_motor(RL_PINS, pwm_rl, 1, speed, MOTOR_RL_DIR)
-    set_motor(RR_PINS, pwm_rr, 1, speed, MOTOR_RR_DIR)
-
+    set_motor(FL_PINS, pwm_fl, 1, speed_fl, MOTOR_FL_DIR)
+    set_motor(FR_PINS, pwm_fr, 1, speed_fr, MOTOR_FR_DIR)
+    set_motor(RL_PINS, pwm_rl, 1, speed_rl, MOTOR_RL_DIR)
+    set_motor(RR_PINS, pwm_rr, 1, speed_rr, MOTOR_RR_DIR)
 
 def rotate_right(speed=SPEED_ROTATE):
     print("Rotate Right")
+    
+    # Use rotation-specific calibration here
+    speed_fl = int(speed * ROT_CALIBRATION_FL)
+    speed_fr = int(speed * ROT_CALIBRATION_FR)
+    speed_rl = int(speed * ROT_CALIBRATION_RL)
+    speed_rr = int(speed * ROT_CALIBRATION_RR)
 
-    set_motor(FL_PINS, pwm_fl, 1, speed, MOTOR_FL_DIR)
-    set_motor(FR_PINS, pwm_fr, -1, speed, MOTOR_FR_DIR)
-    set_motor(RL_PINS, pwm_rl, -1, speed, MOTOR_RL_DIR)
-    set_motor(RR_PINS, pwm_rr, 1, speed, MOTOR_RR_DIR)
+    set_motor(FL_PINS, pwm_fl, -1, speed_fl, MOTOR_FL_DIR)
+    set_motor(FR_PINS, pwm_fr, 1, speed_fr, MOTOR_FR_DIR)
+    set_motor(RL_PINS, pwm_rl, 1, speed_rl, MOTOR_RL_DIR)
+    set_motor(RR_PINS, pwm_rr, -1, speed_rr, MOTOR_RR_DIR)
 
 
 def rotate_left(speed=SPEED_ROTATE):
     print("Rotate Left")
+    
+    # Use rotation-specific calibration here
+    speed_fl = int(speed * ROT_CALIBRATION_FL)
+    speed_fr = int(speed * ROT_CALIBRATION_FR)
+    speed_rl = int(speed * ROT_CALIBRATION_RL)
+    speed_rr = int(speed * ROT_CALIBRATION_RR)
 
-    set_motor(FL_PINS, pwm_fl, -1, speed, MOTOR_FL_DIR)
-    set_motor(FR_PINS, pwm_fr, 1, speed, MOTOR_FR_DIR)
-    set_motor(RL_PINS, pwm_rl, 1, speed, MOTOR_RL_DIR)
-    set_motor(RR_PINS, pwm_rr, -1, speed, MOTOR_RR_DIR)
-
+    set_motor(FL_PINS, pwm_fl, 1, speed_fl, MOTOR_FL_DIR)
+    set_motor(FR_PINS, pwm_fr, -1, speed_fr, MOTOR_FR_DIR)
+    set_motor(RL_PINS, pwm_rl, -1, speed_rl, MOTOR_RL_DIR)
+    set_motor(RR_PINS, pwm_rr, 1, speed_rr, MOTOR_RR_DIR)
 
 def stop():
     """Stop all motors."""

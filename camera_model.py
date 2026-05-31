@@ -305,7 +305,7 @@ def detection_loop():
     picam2 = Picamera2()
     config = picam2.create_video_configuration(
         main={"format": "RGB888", "size": FRAME_SIZE},
-        transform=Transform(hflip=1, vflip=1)
+        transform=Transform(hflip=1, vflip=0)
     )
     picam2.configure(config)
     picam2.start()
@@ -352,5 +352,5 @@ Thread(target=detection_loop, daemon=True).start()
 
 address = ("", 8000)
 server_inst = StreamingServer(address, StreamingHandler)
-print("YOLO stream running on http://192.168.137.212:8000")
+print("YOLO stream running on http://192.168.137.50:8000")
 server_inst.serve_forever()

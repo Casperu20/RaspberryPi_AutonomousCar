@@ -85,7 +85,7 @@ picam2 = Picamera2()
 
 config = picam2.create_video_configuration(
     main={"format": 'YUV420', "size": (640, 480)},
-    transform=Transform(hflip=1, vflip=1)  # 🔧 ROTATE 180 DEGREES
+    transform=Transform(hflip=1, vflip=0)  # 🔧 ROTATE 180 DEGREES
 )
 picam2.configure(config)
     
@@ -103,7 +103,7 @@ except Exception as e:
 try:
     address = ('', 8000)
     server_inst = StreamingServer(address, StreamingHandler)
-    print("Serverul ruleaza! http://192.168.137.212:8000")
+    print("Serverul ruleaza! http://192.168.137.50:8000")
     server_inst.serve_forever()
 except KeyboardInterrupt:
     print("\nOprire manuală detectată...")

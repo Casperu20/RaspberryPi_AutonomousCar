@@ -128,7 +128,7 @@ CELL_DRIVE_SPEED = 40
 CELL_FREE_DISTANCE = 35
 CELL_BLOCKED_DISTANCE = 25
 
-MAX_GRID_STEPS = 20 # scan -> update map -> choose cell -> turn -> move one cell -> save map
+MAX_GRID_STEPS = 30 # scan -> update map -> choose cell -> turn -> move one cell -> save map
 
 MAP_JSON_FILE = "robot_grid_map.json"
 MAP_ASCII_FILE = "robot_grid_map.txt"
