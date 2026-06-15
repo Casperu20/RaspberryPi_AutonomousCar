@@ -11,6 +11,11 @@
 
 ## 2. Canonical GPIO Mapping (Authoritative)
 
+### DHT11
+# --- Config ---
+DHT1_PIN = board.D21
+dht_sensor = adafruit_dht.DHT11(DHT1_PIN, use_pulseio=False)
+
 ### Motor Driver + Motors
 
 - STBY: GPIO20

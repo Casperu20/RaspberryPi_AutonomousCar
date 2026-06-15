@@ -40,12 +40,25 @@ from time import sleep
 import RPi.GPIO as GPIO
 import smbus
 
+import board
+import adafruit_dht
+from supabase import create_client, Client
+
 # ============================================================================
 # GPIO CONFIGURATION
 # ============================================================================
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
+
+# --- Supabase Config ---
+SUPABASE_URL = "https://tdohgxdfiqfzsnhkpzfr.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRkb2hneGRmaXFmenNuaGtwemZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MzE3NzYsImV4cCI6MjA5NzEwNzc3Nn0.wQ6oC0NJ2DU95CWdTgkUWfMopCi0AKVzB7uDfsqJ3D0"
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
+# --- DHT11 Config ---
+DHT1_PIN = board.D21
+dht_sensor = adafruit_dht.DHT11(DHT1_PIN, use_pulseio=False)
 
 # ============================================================================
 # MOTOR PINS
@@ -925,6 +938,38 @@ def sample_environment_placeholder():
     cell["humidity"] = sample["humidity"]
     cell["air_quality"] = sample["air_quality"]
 
+def sample_and_sync_environment():
+    """Reads DHT11, updates the local grid object, and upserts data directly to Supabase."""
+    global robot_x, robot_y
+    
+    # 1. Attempt to read DHT11
+    temp, hum = None, None
+    try:
+        temp = dht_sensor.temperature
+        hum = dht_sensor.humidity
+    except RuntimeError:
+        print("DHT11 read retry needed (skipping this cell's climate metrics for now).")
+    
+    # 2. Get local state data
+    cell = get_cell(robot_x, robot_y)
+    cell_state = cell["state"] if cell else "free"
+    
+    # 3. Synchronize this cell with Supabase via an UPSERT
+    payload = {
+        "x": robot_x,
+        "y": robot_y,
+        "state": cell_state,
+        "visited": True,
+        "temperature": temp,
+        "humidity": hum
+    }
+    
+    try:
+        # Match against unique constraint (x, y) and update if existing
+        supabase.table("grid_cells").upsert(payload, on_conflict="x,y").execute()
+        print(f"Cloud Sync | Uploaded cell ({robot_x}, {robot_y}) successfully.")
+    except Exception as e:
+        print(f"Cloud Sync Error | Failed to reach Supabase: {e}")
 
 # ============================================================================
 # MAP I/O AND VISUALIZATION
@@ -1004,7 +1049,7 @@ def run_grid_mapper():
     position_stack = []
 
     mark_current_cell_visited()
-    sample_environment_placeholder()
+    sample_and_sync_environment()
 
     steps = 0
     while steps < MAX_GRID_STEPS:
@@ -1061,7 +1106,7 @@ def run_grid_mapper():
                 stop()
                 break
             mark_current_cell_visited()
-            sample_environment_placeholder()
+            sample_and_sync_environment()
         else:
             mark_front_as_obstacle()
 
