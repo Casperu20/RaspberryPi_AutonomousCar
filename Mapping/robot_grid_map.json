@@ -14958,7 +14958,7 @@
         "air_quality": null
       },
       {
-        "state": "unknown",
+        "state": "free",
         "visited": false,
         "samples": [],
         "temperature": null,

@@ -114,7 +114,7 @@ GYRO_ZOUT_H = 0x47
 # Calibrated base velocities
 SPEED_FORWARD = 55          # Matches your calibrated forward crawl (was 40)
 SPEED_BACKWARD = 55
-SPEED_ROTATE = 55          # High-torque target velocity for spin maneuvers (was 55)
+SPEED_ROTATE = 45          # High-torque target velocity for spin maneuvers (was 55)
 
 # 1. Driving Calibration (Compensates for slow rear gearboxes)
 CALIBRATION_FL = 0.40  
@@ -134,8 +134,8 @@ SIDE_CLEAR_DISTANCE = 25
 
 # NEW: MPU6050 physical snag detection
 # MPU6050 Filtered Snag Detection
-CARPET_TILT_THRESHOLD = 0.95  # Detects ~3.5 degrees of sustained tilt (gravity leak)
-CRASH_SPIKE_THRESHOLD = 0.95  # Detects a sudden, hard physical impact
+CARPET_TILT_THRESHOLD = 0.98  # Detects ~3.5 degrees of sustained tilt (gravity leak)
+CRASH_SPIKE_THRESHOLD = 0.98  # Detects a sudden, hard physical impact
 
 BACKUP_TIME = 0.35
 
@@ -665,8 +665,21 @@ def mark_cell_state(x, y, state):
     if cell["state"] == OBSTACLE and state == FREE:
         return
 
-    cell["state"] = state
-
+    # NEW: If the sensor discovers something new, update local AND push to cloud
+    if cell["state"] != state:
+        cell["state"] = state
+        
+        # Fire a lightweight ultrasonic ping to Supabase
+        payload = {
+            "x": x,
+            "y": y,
+            "state": state,
+            "visited": cell.get("visited", False)
+        }
+        try:
+            supabase.table("grid_cells").upsert(payload, on_conflict="x,y").execute()
+        except Exception:
+            pass # Ignore temporary network drops
 
 def mark_current_cell_visited():
     cell = get_cell(robot_x, robot_y)
@@ -975,8 +988,8 @@ def sample_and_sync_environment():
         wifi_signal = 85 # Safe placeholder if command fails
         
     # 3. Handle Speed and Battery
-    # If the robot is running this function, it means it just finished a step or is resting
-    current_speed = 0.0 
+    # Calculate exact velocity based on your grid constants
+    current_speed = round((CELL_SIZE_CM / 100) / CELL_DRIVE_TIME, 2) if is_moving else 0.0
     
     # Simulating a small battery drain for now until you add an ADC voltage sensor pin
     simulated_battery = 94
