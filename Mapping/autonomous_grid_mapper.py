@@ -44,6 +44,8 @@ import board
 import adafruit_dht
 from supabase import create_client, Client
 
+import subprocess # Make sure this is at the top of your file with other imports
+
 # ============================================================================
 # GPIO CONFIGURATION
 # ============================================================================
@@ -938,8 +940,19 @@ def sample_environment_placeholder():
     cell["humidity"] = sample["humidity"]
     cell["air_quality"] = sample["air_quality"]
 
+def reset_cloud_map():
+    """Wipes the previous mapping session from the Supabase database."""
+    print("Cloud Sync | Erasing previous map data from database...")
+    try:
+        # Supabase requires a filter to delete rows. 
+        # Since your grid coordinates are 0-61, deleting everything where x >= 0 wipes the whole table safely.
+        supabase.table("grid_cells").delete().gte("x", 0).execute()
+        print("Cloud Sync | Database wiped. Ready for fresh mapping!")
+    except Exception as e:
+        print(f"Cloud Sync Error | Failed to wipe database: {e}")
+
 def sample_and_sync_environment():
-    """Reads DHT11, updates the local grid object, and upserts data directly to Supabase."""
+    """Reads DHT11, captures system metrics, and upserts everything to Supabase."""
     global robot_x, robot_y
     
     # 1. Attempt to read DHT11
@@ -948,28 +961,50 @@ def sample_and_sync_environment():
         temp = dht_sensor.temperature
         hum = dht_sensor.humidity
     except RuntimeError:
-        print("DHT11 read retry needed (skipping this cell's climate metrics for now).")
+        print("DHT11 read retry needed (skipping climate metrics for now).")
     
-    # 2. Get local state data
+    # 2. Capture Real Wi-Fi Signal Strength via Linux system files
+    wifi_signal = 100 # Default fallback
+    try:
+        # Pulls the active link quality score out of /proc/net/wireless
+        cmd = "awk '/wlan0:/ {print int($3 * 100 / 70)}' /proc/net/wireless"
+        output = subprocess.check_output(cmd, shell=True).decode('utf-8').strip()
+        if output:
+            wifi_signal = min(int(output), 100) # Cap at 100%
+    except Exception:
+        wifi_signal = 85 # Safe placeholder if command fails
+        
+    # 3. Handle Speed and Battery
+    # If the robot is running this function, it means it just finished a step or is resting
+    current_speed = 0.0 
+    
+    # Simulating a small battery drain for now until you add an ADC voltage sensor pin
+    simulated_battery = 94
+    
+    # 4. Get local state data
     cell = get_cell(robot_x, robot_y)
     cell_state = cell["state"] if cell else "free"
     
-    # 3. Synchronize this cell with Supabase via an UPSERT
+    # 5. Synchronize with Supabase via an UPSERT
     payload = {
         "x": robot_x,
         "y": robot_y,
         "state": cell_state,
         "visited": True,
         "temperature": temp,
-        "humidity": hum
+        "humidity": hum,
+        "battery": simulated_battery,
+        "signal": wifi_signal,
+        "speed": current_speed
     }
     
     try:
         # Match against unique constraint (x, y) and update if existing
         supabase.table("grid_cells").upsert(payload, on_conflict="x,y").execute()
-        print(f"Cloud Sync | Uploaded cell ({robot_x}, {robot_y}) successfully.")
+        print(f"Cloud Sync | Uploaded cell ({robot_x}, {robot_y}) with Wi-Fi: {wifi_signal}%.")
     except Exception as e:
         print(f"Cloud Sync Error | Failed to reach Supabase: {e}")
+
 
 # ============================================================================
 # MAP I/O AND VISUALIZATION
@@ -1044,6 +1079,8 @@ def run_grid_mapper():
 
     print("\nGrid mapper started.")
     print("Press Ctrl+C to stop.\n")
+
+    reset_cloud_map() # <-- ADD THIS LINE HERE
 
     init_grid()
     position_stack = []

@@ -3,9 +3,9 @@
   "height": 61,
   "cell_size_cm": 35,
   "robot": {
-    "x": 24,
-    "y": 29,
-    "heading": "WEST"
+    "x": 30,
+    "y": 30,
+    "heading": "NORTH"
   },
   "grid": [
     [
@@ -12444,7 +12444,7 @@
         "air_quality": null
       },
       {
-        "state": "obstacle",
+        "state": "unknown",
         "visited": false,
         "samples": [],
         "temperature": null,
@@ -12452,7 +12452,7 @@
         "air_quality": null
       },
       {
-        "state": "free",
+        "state": "unknown",
         "visited": false,
         "samples": [],
         "temperature": null,
@@ -12460,7 +12460,7 @@
         "air_quality": null
       },
       {
-        "state": "obstacle",
+        "state": "unknown",
         "visited": false,
         "samples": [],
         "temperature": null,
@@ -12934,31 +12934,31 @@
         "air_quality": null
       },
       {
-        "state": "free",
-        "visited": true,
+        "state": "unknown",
+        "visited": false,
         "samples": [],
         "temperature": null,
         "humidity": null,
         "air_quality": null
       },
       {
-        "state": "free",
-        "visited": true,
+        "state": "unknown",
+        "visited": false,
         "samples": [],
         "temperature": null,
         "humidity": null,
         "air_quality": null
       },
       {
-        "state": "free",
-        "visited": true,
+        "state": "unknown",
+        "visited": false,
         "samples": [],
         "temperature": null,
         "humidity": null,
         "air_quality": null
       },
       {
-        "state": "free",
+        "state": "unknown",
         "visited": false,
         "samples": [],
         "temperature": null,
@@ -13416,7 +13416,7 @@
         "air_quality": null
       },
       {
-        "state": "free",
+        "state": "unknown",
         "visited": false,
         "samples": [],
         "temperature": null,
@@ -13424,15 +13424,7 @@
         "air_quality": null
       },
       {
-        "state": "free",
-        "visited": true,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
+        "state": "unknown",
         "visited": false,
         "samples": [],
         "temperature": null,
@@ -13440,15 +13432,7 @@
         "air_quality": null
       },
       {
-        "state": "free",
-        "visited": true,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
+        "state": "unknown",
         "visited": false,
         "samples": [],
         "temperature": null,
@@ -13456,7 +13440,7 @@
         "air_quality": null
       },
       {
-        "state": "free",
+        "state": "unknown",
         "visited": false,
         "samples": [],
         "temperature": null,
@@ -13464,7 +13448,23 @@
         "air_quality": null
       },
       {
-        "state": "free",
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
         "visited": false,
         "samples": [],
         "temperature": null,
@@ -13906,86 +13906,6 @@
         "air_quality": null
       },
       {
-        "state": "free",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
-        "visited": true,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "obstacle",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
-        "visited": true,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
-        "visited": true,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
-        "visited": true,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
-        "visited": true,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
-        "visited": true,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
-        "visited": true,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
         "state": "unknown",
         "visited": false,
         "samples": [],
@@ -14059,416 +13979,6 @@
       },
       {
         "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      }
-    ],
-    [
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "unknown",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "obstacle",
-        "visited": true,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
-        "visited": true,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
-        "visited": true,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "obstacle",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "obstacle",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
-        "visited": false,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
-        "visited": true,
-        "samples": [],
-        "temperature": null,
-        "humidity": null,
-        "air_quality": null
-      },
-      {
-        "state": "free",
         "visited": false,
         "samples": [],
         "temperature": null,
@@ -14894,7 +14404,55 @@
         "air_quality": null
       },
       {
-        "state": "obstacle",
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
         "visited": false,
         "samples": [],
         "temperature": null,
@@ -14910,7 +14468,449 @@
         "air_quality": null
       },
       {
-        "state": "obstacle",
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      }
+    ],
+    [
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
+        "visited": false,
+        "samples": [],
+        "temperature": null,
+        "humidity": null,
+        "air_quality": null
+      },
+      {
+        "state": "unknown",
         "visited": false,
         "samples": [],
         "temperature": null,
@@ -14958,7 +14958,7 @@
         "air_quality": null
       },
       {
-        "state": "free",
+        "state": "unknown",
         "visited": false,
         "samples": [],
         "temperature": null,
